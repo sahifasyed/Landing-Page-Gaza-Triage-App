@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaza Triage App - Offline Emergency Care for Gaza</title>
+    <meta name="description" content="Life-saving offline triage app for Gaza. Works without internet. Built for the Ummah.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'><path d='M12 2L13.09 8.26L22 9L13.09 15.74L12 22L10.91 15.74L2 9L10.91 8.26L12 2Z'/></svg>">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1B2A41;
+            --accent: #3A506B;
+            --emergency: #D64545;
+            --background: #F4F6F8;
+            --text: #2E2E2E;
+            --white: #FFFFFF;
+            --gradient-primary: linear-gradient(135deg, #1B2A41 0%, #3A506B 100%);
+            --gradient-accent: linear-gradient(135deg, #3A506B 0%, #5A7A9B 100%);
+            --shadow-soft: 0 10px 40px rgba(27, 42, 65, 0.1);
+            --shadow-hover: 0 20px 60px rgba(27, 42, 65, 0.15);
+        }
+
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [dir="ltr"] {
+            direction: ltr;
+            text-align: left;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--background);
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.05;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(244, 246, 248, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(27, 42, 65, 0.1);
+            z-index: 100;
+            padding: 1rem 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .lang-toggle {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .lang-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 2rem;
+            background: var(--gradient-primary);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: drift 30s linear infinite;
+        }
+
+        @keyframes drift {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-60px); }
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-text h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .hero-text h2 {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .hero-text p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--emergency);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .phone-mockup {
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .phone-mockup img {
+            width: 100%;
+            max-width: 300px;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            opacity: 0.7;
+            margin-bottom: 4rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(27, 42, 65, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-primary);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(27, 42, 65, 0.2);
+        }
+
+        .feature-icon svg {
+            width: 30px;
+            height: 30px;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .feature-card p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        /* Screenshots Section */
+        .screenshots {
+            padding: 6rem 2rem;
+            background: var(--background);
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .screenshot-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .screenshot-card:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .screenshot-placeholder {
+            width: 100%;
+            height: auto;
+            min-height: 400px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: white;
+            font-weight: 600;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screenshot-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 15px;
+            max-height: 600px;
+        }
+
+        /* How it Works */
+        .how-it-works {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .step h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        /* Inspiration Quote */
+        .inspiration {
+            padding: 6rem 2rem;
+            background: var(--gradient-primary);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inspiration::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .inspiration-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .quote {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 300;
+            margin-bottom: 2rem;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .arabic-quote {
+            font-size: clamp(1.4rem, 3.5vw, 2rem);
+            margin-bottom: 2rem;
+            font-family: 'Amiri', serif;
+            direction: rtl;
+        }
+
+        .hadith {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .reflection {
+            font-size: 1rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* About Section */
+        .about {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .about p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
+
+        /* Final CTA */
+        .final-cta {
+            padding: 6rem 2rem;
+            background: var(--background);
+            text-align: center;
+        }
+
+        .cta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 3rem 2rem 1rem;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .footer-message {
+            font-weight: 600;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta-buttons {
+                justify-content: center;
+            }
+            
+            .header-content {
+                padding: 0 1rem;
+            }
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .hero-content {
+            text-align: right;
+        }
+
+        [dir="rtl"] .feature-card,
+        [dir="rtl"] .about-content {
+            text-align: right;
+        }
+
+        /* Loading Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                    <circle cx="30" cy="30" r="2" fill="#1B2A41" opacity="0.1"/>
+                </pattern>
+            </defs>
+            <rect x="0" y="0" width="100%" height="100%" fill="url(#pattern)"/>
+        </svg>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Gaza Triage App
+            </div>
+            <button class="lang-toggle" onclick="toggleLanguage()">English ↔ العربية</button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content fade-in">
+            <div class="hero-text">
+                <h1>Gaza Triage App</h1>
+                <h2>Offline Emergency Care: Built for Gaza. Powered by the Ummah.</h2>
+                <p>For Gaza. For life. For now.</p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary">
+                        📱 Download for Android
+                    </a>
+                    <a href="#" class="btn btn-secondary">
+                        🍏 Coming soon to iOS
+                    </a>
+                </div>
+            </div>
+            <div class="phone-mockup">
+                <div style="width: 300px; height: 600px; background: linear-gradient(135deg, #1B2A41, #3A506B); border-radius: 30px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                    <div style="background: white; height: 100%; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 20px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1B2A41;">Gaza Triage</div>
+                        <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                            <div style="background: #3A506B; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: 600;">👥 Public Mode</div>
+                            <div style="background: #D64545; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: 600;">🩺 Medic Mode</div>
+                            <div style="background: #5A7A9B; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: 600;">📦 Request Supplies</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Life-Saving Features</h2>
+            <p class="section-subtitle">"Whoever saves one life, it is as if he had saved all of mankind." - Quran 5:32</p>
+            
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                    </div>
+                    <h3>🧭 Offline Mode</h3>
+                    <p>Works without internet. Saves emergency data locally: When every second counts, connectivity shouldn't be a barrier.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                        </svg>
+                    </div>
+                    <h3>📡 Bluetooth Broadcasts</h3>
+                    <p>Sends emergency alerts nearby via BLE, even offline: Creates a mesh network of hope in the darkest times.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                    </div>
+                    <h3>🆘 Urgent Supplies Requests</h3>
+                    <p>Request water, food, or baby care: even without injury. Supporting the most vulnerable members of our Ummah.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                    </div>
+                    <h3>🌐 Arabic & English</h3>
+                    <p>Toggle RTL/LTR layouts with full font + layout support. Bridging languages to save lives across communities.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                    <h3>🩺 Smart Triage</h3>
+                    <p>Tap symptoms, get Red / Blue / Green status instantly. Guided by medical protocols and compassionate care.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="9" cy="9" r="2"/>
+                            <path d="M21 15l-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                        </svg>
+                    </div>
+                    <h3>🛡️ Never Lose a Case</h3>
+                    <p>Critical cases saved offline with QR codes for instant transfer. Queue uploads when connection returns: no patient forgotten.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                    </div>
+                    <h3>📖 First Aid Help</h3>
+                    <p>Quick, visual offline guides for emergencies. Empowering every person to be a lifesaver in their community.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="screenshots">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <p class="section-subtitle">Every screen designed with urgency and clarity in mind</p>
+            
+            <div class="screenshots-grid">
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder"><img src="screenshot1.png" alt="Home Screen"/></div>
+                    <h4>Choose Your Mode</h4>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder"><img src="screenshot2.png" alt="Symptom Selector"/></div>
+                    <h4>Symptom Selector</h4>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder"><img src="screenshot3.png" alt="Medic Verification"/></div>
+                    <h4>PMC ID Verification</h4>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder"><img src="screenshot4.png" alt="Supply Requests"/></div>
+                    <h4>Emergency Supplies</h4>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder"><img src="screenshot5.png" alt="First Aid Guide"/></div>
+                    <h4>Visual Instructions</h4>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder"><img src="screenshot6.png" alt="BLE Status"/></div>
+                    <h4>Network Alerts</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Simple steps in the most complex situations</p>
+            
+            <div class="steps">
+                <div class="step fade-in">
+                    <div class="step-number">1</div>
+                    <h3>Open Instantly</h3>
+                    <p>No signal needed. The app works completely offline, ready when you need it most.</p>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">2</div>
+                    <h3>Choose Symptoms</h3>
+                    <p>Tap symptoms or urgent needs. For medics: Enter PMC ID to unlock advanced features.</p>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">3</div>
+                    <h3>Get Instant Triage</h3>
+                    <p>App assigns Red/Blue/Green status based on medical protocols and saves data locally.</p>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">4</div>
+                    <h3>Alert Network</h3>
+                    <p>If urgent, nearby devices receive alerts via Bluetooth, creating a community response network.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Inspiration Section -->
+    <section class="inspiration">
+        <div class="inspiration-content fade-in">
+            <div class="arabic-quote">وَمَنْ أَحْيَاهَا فَكَأَنَّمَا أَحْيَا النَّاسَ جَمِيعًا</div>
+            <div class="quote">"Whoever saves one life, it is as if he had saved all of mankind."</div>
+            <div class="hadith">"The most beloved people to Allah are those who are most beneficial to others." - Prophet Muhammad ﷺ</div>
+            <div class="reflection">
+                This app is a sadaqah jariyah: ongoing charity for the Ummah under siege. Every download, every share, every life saved continues the reward.
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about">
+        <div class="container">
+            <div class="about-content fade-in">
+                <h2 class="section-title">Why We Built Gaza Triage App</h2>
+                <p>
+                    In Gaza, victims often die before reaching hospitals. Roads are destroyed, and the internet is down. 
+                    Gaza Triage App equips civilians and medics to respond instantly: offline, bilingual, and fast.
+                </p>
+                <p>
+                    It reflects our humanitarian, technical, and spiritual duty to protect life in the Ummah. 
+                    Every feature is designed with one goal: saving lives when traditional systems fail.
+                </p>            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: var(--primary); color: white; padding: 2rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                <span style="opacity: 0.8;">Terms & Conditions Apply</span>
+                <span style="opacity: 0.6;">|</span>
+                <span style="opacity: 0.8;">Privacy Policy</span>
+                <span style="opacity: 0.6;">|</span>
+                <span style="opacity: 0.8;">Contact Support</span>
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.7;">
+                © 2025 Gaza Triage App. Est. 2025. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
